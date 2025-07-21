@@ -1,186 +1,230 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Company, CreateCompanyData, UpdateCompanyData, CompanyStatus } from '@/lib/types/company';
+import React, { useState } from 'react';
+import type { Enterprise } from '../../lib/types/enterprise';
+import { Input } from '../ui/input';
+import { Button } from '../ui/button';
+import { Label } from '../ui/label';
 
-interface CompanyFormProps {
-  company?: Company;
-  onSubmit: (data: CreateCompanyData | UpdateCompanyData, action: 'save' | 'submit') => Promise<void>;
-  onCancel: () => void;
-  isLoading?: boolean;
-}
+export type CompanyFormProps = {
+  initialData?: Partial<Enterprise>;
+  onSubmit: (data: Omit<Enterprise, 'id' | 'created_at' | 'updated_at'>) => void;
+  onCancel?: () => void;
+  loading?: boolean;
+};
 
-const CompanyForm = ({ company, onSubmit, onCancel, isLoading = false }: CompanyFormProps) => {
-  const [formData, setFormData] = useState({
-    name: company?.name || '',
-    logo_url: company?.logo_url || '',
-    description: company?.description || '',
-    details: company?.details || '',
-    address: company?.address || '',
-    website: company?.website || ''
+const defaultForm: Omit<Enterprise, 'id' | 'created_at' | 'updated_at'> = {
+  name: '',
+  type: '',
+  industry: '',
+  founded_date: '',
+  registered_capital: 0,
+  business_scope: '',
+  address: '',
+  phone: '',
+  email: '',
+  website: '',
+  description: '',
+  status: 'draft',
+  is_public: false,
+  submitted_at: '',
+  approved_at: '',
+  approved_by: '',
+  metadata: {},
+};
+
+export const CompanyForm: React.FC<CompanyFormProps> = ({ initialData, onSubmit, onCancel, loading }) => {
+  console.log('CompanyForm', initialData);
+  const [form, setForm] = useState<Omit<Enterprise, 'id' | 'created_at' | 'updated_at'>>({
+    ...defaultForm,
+    ...initialData,
   });
+  const [error, setError] = useState<string | null>(null);
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSaveDraft = async () => {
-    setIsSubmitting(true);
-    try {
-      await onSubmit(formData, 'save');
-    } finally {
-      setIsSubmitting(false);
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    const target = e.target;
+    const name = target.name;
+    if (target instanceof HTMLInputElement) {
+      if (target.type === 'checkbox') {
+        setForm((prev) => ({
+          ...prev,
+          [name]: target.checked,
+        }));
+      } else {
+        setForm((prev) => ({
+          ...prev,
+          [name]: target.value,
+        }));
+      }
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        [name]: target.value,
+      }));
     }
   };
 
-  const handleSubmitForReview = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-
-    // 验证必填字段
-    if (!formData.name.trim()) {
-      alert('请输入企业名称');
+    if (!form.name || !form.type || !form.address) {
+      setError('企业名称、类型、地址为必填项');
       return;
     }
-
-    // 验证网站 URL 格式
-    if (formData.website && !isValidUrl(formData.website)) {
-      alert('请输入有效的网站地址');
-      return;
-    }
-
-    setIsSubmitting(true);
-    try {
-      await onSubmit(formData, 'submit');
-    } finally {
-      setIsSubmitting(false);
-    }
+    setError(null);
+    console.log('handleSubmit', form);
+    onSubmit(form);
   };
-
-  const isValidUrl = (url: string) => {
-    try {
-      new URL(url);
-      return true;
-    } catch {
-      return false;
-    }
-  };
-
-  const isFormValid = formData.name.trim() &&
-    (!formData.website || isValidUrl(formData.website));
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>{company ? '编辑企业' : '创建企业'}</CardTitle>
-        <CardDescription>
-          {company ? '修改企业信息' : '添加新的企业信息'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmitForReview} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">企业名称 *</Label>
-            <Input
-              id="name"
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="请输入企业名称"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="logo_url">Logo URL</Label>
-            <Input
-              id="logo_url"
-              type="url"
-              value={formData.logo_url}
-              onChange={(e) => handleInputChange('logo_url', e.target.value)}
-              placeholder="https://example.com/logo.png"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">简述</Label>
-            <textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
-              placeholder="请输入企业简述"
-              className="w-full min-h-[80px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="details">详情</Label>
-            <textarea
-              id="details"
-              value={formData.details}
-              onChange={(e) => handleInputChange('details', e.target.value)}
-              placeholder="请输入企业详细信息"
-              className="w-full min-h-[120px] px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="address">地址</Label>
-            <Input
-              id="address"
-              type="text"
-              value={formData.address}
-              onChange={(e) => handleInputChange('address', e.target.value)}
-              placeholder="请输入企业地址"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="website">官网</Label>
-            <Input
-              id="website"
-              type="url"
-              value={formData.website}
-              onChange={(e) => handleInputChange('website', e.target.value)}
-              placeholder="https://example.com"
-            />
-          </div>
-
-          <div className="flex justify-end space-x-2 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onCancel}
-              disabled={isLoading || isSubmitting}
-            >
-              取消
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleSaveDraft}
-              disabled={isLoading || isSubmitting}
-            >
-              {isSubmitting ? '保存中...' : '保存草稿'}
-            </Button>
-            <Button
-              type="submit"
-              disabled={isLoading || isSubmitting || !isFormValid}
-            >
-              {isSubmitting ? '提交中...' : '提交审核'}
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+    <form onSubmit={handleSubmit} className="space-y-4" aria-label="企业信息表单">
+      <div>
+        <Label htmlFor="name">企业名称 *</Label>
+        <Input
+          id="name"
+          name="name"
+          value={form.name}
+          onChange={handleChange}
+          required
+          className="mt-1"
+          aria-required="true"
+        />
+      </div>
+      <div>
+        <Label htmlFor="type">企业类型 *</Label>
+        <Input
+          id="type"
+          name="type"
+          value={form.type}
+          onChange={handleChange}
+          required
+          className="mt-1"
+          aria-required="true"
+        />
+      </div>
+      <div>
+        <Label htmlFor="industry">所属行业</Label>
+        <Input
+          id="industry"
+          name="industry"
+          value={form.industry || ''}
+          onChange={handleChange}
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label htmlFor="founded_date">成立日期</Label>
+        <Input
+          id="founded_date"
+          name="founded_date"
+          type="date"
+          value={form.founded_date || ''}
+          onChange={handleChange}
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label htmlFor="registered_capital">注册资本</Label>
+        <Input
+          id="registered_capital"
+          name="registered_capital"
+          type="number"
+          value={form.registered_capital || ''}
+          onChange={handleChange}
+          className="mt-1"
+          min={0}
+        />
+      </div>
+      <div>
+        <Label htmlFor="business_scope">经营范围</Label>
+        <textarea
+          id="business_scope"
+          name="business_scope"
+          value={form.business_scope || ''}
+          onChange={handleChange}
+          className="mt-1 w-full rounded border border-gray-300 p-2"
+          rows={2}
+        />
+      </div>
+      <div>
+        <Label htmlFor="address">企业地址 *</Label>
+        <Input
+          id="address"
+          name="address"
+          value={form.address}
+          onChange={handleChange}
+          required
+          className="mt-1"
+          aria-required="true"
+        />
+      </div>
+      <div>
+        <Label htmlFor="phone">联系电话</Label>
+        <Input
+          id="phone"
+          name="phone"
+          value={form.phone || ''}
+          onChange={handleChange}
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label htmlFor="email">企业邮箱</Label>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          value={form.email || ''}
+          onChange={handleChange}
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label htmlFor="website">企业网站</Label>
+        <Input
+          id="website"
+          name="website"
+          value={form.website || ''}
+          onChange={handleChange}
+          className="mt-1"
+        />
+      </div>
+      <div>
+        <Label htmlFor="description">企业描述</Label>
+        <textarea
+          id="description"
+          name="description"
+          value={form.description || ''}
+          onChange={handleChange}
+          className="mt-1 w-full rounded border border-gray-300 p-2"
+          rows={2}
+        />
+      </div>
+      <div className="flex items-center space-x-2">
+        <input
+          id="is_public"
+          name="is_public"
+          type="checkbox"
+          checked={form.is_public}
+          onChange={handleChange}
+          className="h-4 w-4"
+          aria-checked={form.is_public}
+        />
+        <Label htmlFor="is_public">对外公开企业信息</Label>
+      </div>
+      {error && <div className="text-red-500 text-sm">{error}</div>}
+      <div className="flex space-x-2">
+        <Button type="submit" aria-label="提交企业信息" disabled={loading}>
+          {loading ? '提交中...' : '提交'}
+        </Button>
+        {onCancel && (
+          <Button type="button" variant="outline" onClick={onCancel} aria-label="取消">
+            取消
+          </Button>
+        )}
+      </div>
+    </form>
   );
 };
 

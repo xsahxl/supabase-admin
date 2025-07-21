@@ -23,20 +23,6 @@ export default async function Index() {
 
   return (
     <div className="flex-1 w-full flex flex-col gap-20 items-center">
-      <nav className="w-full flex justify-center border-b border-b-foreground/10 h-16">
-        <div className="w-full max-w-4xl flex justify-between items-center p-3 text-sm">
-          <div className="flex items-center gap-4">
-            <Link href="/" className="hover:underline">
-              首页
-            </Link>
-            <Link href="/companies" className="hover:underline">
-              企业管理
-            </Link>
-          </div>
-          <AuthButton />
-        </div>
-      </nav>
-
       <div className="animate-in flex-1 flex flex-col gap-20 opacity-0 max-w-4xl px-3">
         <div className="flex-1 flex flex-col gap-6">
           <h1 className="text-2xl font-bold">欢迎使用企业管理系统</h1>

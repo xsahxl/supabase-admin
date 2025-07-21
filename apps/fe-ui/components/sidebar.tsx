@@ -20,7 +20,7 @@ const Sidebar: FC = () => {
       aria-label="侧边导航"
     >
       <Link
-        href="/companies"
+        href="/company"
         className={`block py-3 px-4 rounded-lg font-medium transition-colors duration-150 focus:outline-none ${isCompaniesActive
           ? 'bg-blue-500 text-white hover:bg-blue-600 focus:bg-blue-600'
           : 'text-gray-800 hover:bg-gray-200 focus:bg-gray-200'
