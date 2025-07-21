@@ -8,7 +8,7 @@ const USER_INFO_KEY = 'user_info';
 export interface UserInfo {
   id: string;
   email: string;
-  userType: string;
+  role: string;
   status: string;
   firstName?: string;
   lastName?: string;
@@ -74,15 +74,15 @@ export const isAuthenticated = (): boolean => {
 };
 
 // 检查用户权限
-export const hasPermission = (requiredUserType: string): boolean => {
+export const hasPermission = (requiredRole: string): boolean => {
   const userInfo = getUserInfo();
   if (!userInfo) return false;
 
   // 超级管理员拥有所有权限
-  if (userInfo.userType === 'super_admin') return true;
+  if (userInfo.role === 'super_admin') return true;
 
   // 检查具体权限
-  return userInfo.userType === requiredUserType;
+  return userInfo.role === requiredRole;
 };
 
 // 检查是否为管理员
@@ -118,11 +118,11 @@ export const formatUserName = (userInfo: UserInfo): string => {
 };
 
 // 获取用户类型显示名称
-export const getUserTypeDisplayName = (userType: string): string => {
+export const getRoleDisplayName = (role: string): string => {
   const typeMap: Record<string, string> = {
     enterprise: '企业用户',
     admin: '管理员',
     super_admin: '超级管理员',
   };
-  return typeMap[userType] || userType;
+  return typeMap[role] || role;
 }; 

@@ -62,7 +62,7 @@ WHERE NOT EXISTS (
 -- 这里手动更新为 super_admin 类型
 
 UPDATE users 
-SET user_type = 'super_admin'
+SET role = 'super_admin'
 WHERE auth_user_id IN (
   SELECT id FROM auth.users WHERE email = 'admin@example.com'
 );
@@ -74,7 +74,7 @@ WHERE auth_user_id IN (
 SELECT 
   u.id,
   u.auth_user_id,
-  u.user_type,
+  u.role,
   u.first_name,
   u.last_name,
   au.email,

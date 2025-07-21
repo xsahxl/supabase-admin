@@ -26,7 +26,7 @@ CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) UNIQUE NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
-  user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('enterprise', 'admin', 'super_admin')),
+  role VARCHAR(20) NOT NULL CHECK (role IN ('user', 'admin', 'super_admin')),
   status VARCHAR(20) NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'inactive', 'suspended')),
   email_verified BOOLEAN DEFAULT FALSE,
   avatar_url TEXT,
@@ -42,7 +42,7 @@ CREATE TABLE users (
 
 -- 索引
 CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_user_type ON users(user_type);
+CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_status ON users(status);
 CREATE INDEX idx_users_created_at ON users(created_at);
 ```
@@ -200,7 +200,7 @@ CREATE TABLE invitations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   email VARCHAR(255) NOT NULL,
   invited_by UUID NOT NULL REFERENCES users(id),
-  user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('admin', 'super_admin')),
+  role VARCHAR(20) NOT NULL CHECK (role IN ('admin', 'super_admin')),
   token VARCHAR(255) UNIQUE NOT NULL,
   status VARCHAR(20) NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired')),
   expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
@@ -462,7 +462,7 @@ CREATE POLICY "Super admins can view all users" ON users
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM users
-      WHERE id = auth.uid() AND user_type = 'super_admin'
+      WHERE id = auth.uid() AND role = 'super_admin'
     )
   );
 ```
@@ -479,7 +479,7 @@ CREATE POLICY "Enterprise users can view own enterprise" ON enterprises
     user_id = auth.uid() OR
     EXISTS (
       SELECT 1 FROM users
-      WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
+      WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
     )
   );
 
@@ -496,7 +496,7 @@ CREATE POLICY "Admins can update enterprise status" ON enterprises
   FOR UPDATE USING (
     EXISTS (
       SELECT 1 FROM users
-      WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
+      WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
     )
   );
 ```
@@ -516,7 +516,7 @@ CREATE POLICY "Enterprise users can view own review records" ON review_records
     ) OR
     EXISTS (
       SELECT 1 FROM users
-      WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
+      WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
     )
   );
 
@@ -525,7 +525,7 @@ CREATE POLICY "Admins can insert review records" ON review_records
   FOR INSERT WITH CHECK (
     EXISTS (
       SELECT 1 FROM users
-      WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
+      WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
     )
   );
 ```
@@ -542,7 +542,7 @@ CREATE INDEX idx_enterprises_status_created_at ON enterprises(status, created_at
 CREATE INDEX idx_review_records_enterprise_created ON review_records(enterprise_id, created_at);
 
 -- 用户类型和状态复合索引
-CREATE INDEX idx_users_type_status ON users(user_type, status);
+CREATE INDEX idx_users_type_status ON users(role, status);
 ```
 
 ### 7.2 部分索引

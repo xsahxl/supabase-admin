@@ -24,7 +24,7 @@ export const supabase: SupabaseClient = {} as SupabaseClient;
 export interface User {
   id: string;
   auth_user_id: string;
-  user_type: 'enterprise' | 'admin' | 'super_admin';
+  role: 'enterprise' | 'admin' | 'super_admin';
   first_name?: string;
   last_name?: string;
   avatar_url?: string;
@@ -72,7 +72,7 @@ export const signIn = async (email: string, password: string) => {
 export const signUp = async (email: string, password: string, userData: {
   first_name?: string;
   last_name?: string;
-  user_type?: 'enterprise' | 'admin' | 'super_admin';
+  role?: 'enterprise' | 'admin' | 'super_admin';
 }) => {
   try {
     const { data, error } = await supabase.auth.signUp({
@@ -142,7 +142,7 @@ export const getCurrentUser = async () => {
 };
 
 // 检查用户权限
-export const checkUserPermission = (userProfile: User, requiredType: 'admin' | 'super_admin') => {
+export const checkUserPermission = (userProfile: User, requiredRole: 'admin' | 'super_admin') => {
   if (!userProfile) return false;
 
   const permissionLevels = {
@@ -151,8 +151,8 @@ export const checkUserPermission = (userProfile: User, requiredType: 'admin' | '
     'super_admin': 3,
   };
 
-  const userLevel = permissionLevels[userProfile.user_type];
-  const requiredLevel = permissionLevels[requiredType];
+  const userLevel = permissionLevels[userProfile.role];
+  const requiredLevel = permissionLevels[requiredRole];
 
   return userLevel >= requiredLevel;
 };

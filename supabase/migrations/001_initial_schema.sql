@@ -20,10 +20,10 @@ CREATE TABLE users (
   auth_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   
   -- 用户类型：定义用户在系统中的角色和权限
-  -- enterprise: 企业用户，可以管理自己的企业信息
+  -- user: 普通用户，可以管理自己的企业信息
   -- admin: 管理员，可以审核企业信息
   -- super_admin: 超级管理员，拥有所有权限
-  user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('enterprise', 'admin', 'super_admin')),
+  role VARCHAR(20) NOT NULL CHECK (role IN ('user', 'admin', 'super_admin')),
   
   -- 头像URL：用户头像图片的存储地址
   avatar_url TEXT,
@@ -163,7 +163,7 @@ CREATE TABLE review_records (
 
 -- 用户表索引
 CREATE INDEX idx_users_auth_user_id ON users(auth_user_id);
-CREATE INDEX idx_users_user_type ON users(user_type);
+CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_created_at ON users(created_at);
 
 -- 企业表索引
@@ -272,7 +272,7 @@ CREATE TRIGGER update_enterprises_updated_at BEFORE UPDATE ON enterprises FOR EA
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.users (auth_user_id, user_type, first_name, last_name)
+  INSERT INTO public.users (auth_user_id, role, first_name, last_name)
   VALUES (
     NEW.id,
     'enterprise', -- 默认为企业用户类型

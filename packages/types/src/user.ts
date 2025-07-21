@@ -1,6 +1,6 @@
 // 用户类型枚举
-export enum UserType {
-  ENTERPRISE = 'enterprise',
+export enum Role {
+  USER = 'user',
   ADMIN = 'admin',
   SUPER_ADMIN = 'super_admin',
 }
@@ -16,7 +16,7 @@ export enum UserStatus {
 export interface User {
   id: string;
   email: string;
-  userType: UserType;
+  role: Role;
   status: UserStatus;
   emailVerified: boolean;
   avatarUrl?: string;
@@ -51,7 +51,7 @@ export interface UserProfile {
 export interface CreateUserParams {
   email: string;
   password: string;
-  userType: UserType;
+  role: Role;
   firstName?: string;
   lastName?: string;
   phone?: string;

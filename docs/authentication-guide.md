@@ -18,7 +18,7 @@ auth.users (Supabase 内置)
 public.users (业务表)
 ├── id (UUID) - 业务用户ID
 ├── auth_user_id (UUID) - 关联到 auth.users.id
-├── user_type (VARCHAR) - 用户类型
+├── role (VARCHAR) - 角色（user/admin/super_admin）
 ├── first_name (VARCHAR) - 名字
 ├── last_name (VARCHAR) - 姓氏
 └── ... (其他业务字段)
@@ -68,10 +68,10 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 SELECT id, email, created_at FROM auth.users WHERE email = 'admin@example.com';
 
 -- 创建超级管理员业务记录
-INSERT INTO users (auth_user_id, user_type, first_name, last_name)
+INSERT INTO users (auth_user_id, role, first_name, last_name)
 SELECT 
   id as auth_user_id,
-  'super_admin' as user_type,
+  'super_admin' as role,
   '系统' as first_name,
   '管理员' as last_name
 FROM auth.users 
@@ -82,7 +82,7 @@ WHERE email = 'admin@example.com'
 
 -- 验证创建结果
 SELECT 
-  u.user_type,
+  u.role,
   u.first_name,
   u.last_name,
   au.email
@@ -112,7 +112,7 @@ const createAdmin = async (email: string, password: string) => {
     .from('users')
     .insert({
       auth_user_id: authData.user.id,
-      user_type: 'super_admin',
+      role: 'super_admin',
       first_name: '系统',
       last_name: '管理员',
     });
@@ -132,8 +132,8 @@ const handleLogin = async (email: string, password: string) => {
     const result = await signIn(email, password);
     
     // 检查权限
-    if (result.userProfile?.user_type === 'super_admin' || 
-        result.userProfile?.user_type === 'admin') {
+    if (result.userProfile?.role === 'super_admin' || 
+        result.userProfile?.role === 'admin') {
       // 登录成功，跳转到管理后台
       router.push('/admin/dashboard');
     } else {
@@ -179,9 +179,9 @@ const isSuperAdmin = checkUserPermission(userProfile, 'super_admin');
 
 ```typescript
 const permissionLevels = {
-  'enterprise': 1,    // 企业用户
-  'admin': 2,         // 管理员
-  'super_admin': 3,   // 超级管理员
+  'user': 1,    // 普通用户
+  'admin': 2,   // 管理员
+  'super_admin': 3, // 超级管理员
 };
 ```
 
@@ -196,25 +196,6 @@ const permissionLevels = {
 ```sql
 -- 将用户升级为管理员
 UPDATE users 
-SET user_type = 'admin' 
+SET role = 'admin' 
 WHERE auth_user_id = (SELECT id FROM auth.users WHERE email = 'user@example.com');
 ```
-
-### Q: 如何删除用户？
-
-```sql
--- 删除业务用户记录（auth.users 会自动删除）
-DELETE FROM users WHERE auth_user_id = (SELECT id FROM auth.users WHERE email = 'user@example.com');
-```
-
-### Q: 如何重置密码？
-
-通过 Supabase Auth 的密码重置功能，无需手动处理。
-
-## 最佳实践
-
-1. **始终使用 Supabase Auth 进行认证**
-2. **通过 `auth_user_id` 关联两个表**
-3. **使用 RLS 策略保护数据安全**
-4. **在应用层检查用户权限**
-5. **定期备份用户数据** 

@@ -55,7 +55,7 @@ export interface AuthResponse {
   user: {
     id: string;
     email: string;
-    userType: string;
+    role: string;
     status: string;
   };
   session: {
