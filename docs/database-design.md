@@ -3,6 +3,7 @@
 ## 1. 数据库概述
 
 ### 1.1 设计原则
+
 - 遵循第三范式，避免数据冗余
 - 使用 UUID 作为主键，提高安全性
 - 实施 Row Level Security (RLS) 策略
@@ -10,6 +11,7 @@
 - 记录所有重要操作的时间戳
 
 ### 1.2 数据库版本
+
 - PostgreSQL 15+
 - Supabase 扩展支持
 
@@ -18,6 +20,7 @@
 ### 2.1 用户相关表
 
 #### 2.1.1 users (用户表)
+
 ```sql
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -45,6 +48,7 @@ CREATE INDEX idx_users_created_at ON users(created_at);
 ```
 
 #### 2.1.2 user_profiles (用户档案表)
+
 ```sql
 CREATE TABLE user_profiles (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -70,6 +74,7 @@ CREATE INDEX idx_user_profiles_user_id ON user_profiles(user_id);
 ### 2.2 企业相关表
 
 #### 2.2.1 enterprises (企业表)
+
 ```sql
 CREATE TABLE enterprises (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -104,6 +109,7 @@ CREATE INDEX idx_enterprises_name ON enterprises(name);
 ```
 
 #### 2.2.2 enterprise_documents (企业证件表)
+
 ```sql
 CREATE TABLE enterprise_documents (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -126,6 +132,7 @@ CREATE INDEX idx_enterprise_documents_type ON enterprise_documents(document_type
 ```
 
 #### 2.2.3 enterprise_contacts (企业联系人表)
+
 ```sql
 CREATE TABLE enterprise_contacts (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -146,6 +153,7 @@ CREATE INDEX idx_enterprise_contacts_enterprise_id ON enterprise_contacts(enterp
 ### 2.3 审核相关表
 
 #### 2.3.1 review_records (审核记录表)
+
 ```sql
 CREATE TABLE review_records (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -166,6 +174,7 @@ CREATE INDEX idx_review_records_created_at ON review_records(created_at);
 ```
 
 #### 2.3.2 review_templates (审核模板表)
+
 ```sql
 CREATE TABLE review_templates (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -185,6 +194,7 @@ CREATE INDEX idx_review_templates_is_active ON review_templates(is_active);
 ### 2.4 邀请相关表
 
 #### 2.4.1 invitations (邀请表)
+
 ```sql
 CREATE TABLE invitations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -211,6 +221,7 @@ CREATE INDEX idx_invitations_expires_at ON invitations(expires_at);
 ### 2.5 日志相关表
 
 #### 2.5.1 audit_logs (审计日志表)
+
 ```sql
 CREATE TABLE audit_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -233,6 +244,7 @@ CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
 ```
 
 #### 2.5.2 login_logs (登录日志表)
+
 ```sql
 CREATE TABLE login_logs (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -253,6 +265,7 @@ CREATE INDEX idx_login_logs_success ON login_logs(success);
 ### 2.6 系统配置表
 
 #### 2.6.1 system_settings (系统设置表)
+
 ```sql
 CREATE TABLE system_settings (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -271,9 +284,10 @@ CREATE INDEX idx_system_settings_key ON system_settings(key);
 ## 3. 视图设计
 
 ### 3.1 企业信息视图
+
 ```sql
 CREATE VIEW enterprise_details AS
-SELECT 
+SELECT
   e.*,
   u.email as user_email,
   u.first_name,
@@ -290,9 +304,10 @@ GROUP BY e.id, u.email, u.first_name, u.last_name, up.company_name;
 ```
 
 ### 3.2 审核统计视图
+
 ```sql
 CREATE VIEW review_statistics AS
-SELECT 
+SELECT
   reviewer_id,
   u.email as reviewer_email,
   COUNT(*) as total_reviews,
@@ -307,6 +322,7 @@ GROUP BY reviewer_id, u.email;
 ## 4. 存储过程
 
 ### 4.1 企业状态更新存储过程
+
 ```sql
 CREATE OR REPLACE FUNCTION update_enterprise_status(
   p_enterprise_id UUID,
@@ -322,16 +338,16 @@ BEGIN
   SELECT status INTO v_old_status
   FROM enterprises
   WHERE id = p_enterprise_id;
-  
+
   -- 更新企业状态
   UPDATE enterprises
-  SET 
+  SET
     status = p_new_status,
     updated_at = NOW(),
     approved_at = CASE WHEN p_new_status = 'approved' THEN NOW() ELSE approved_at END,
     approved_by = CASE WHEN p_new_status = 'approved' THEN p_reviewer_id ELSE approved_by END
   WHERE id = p_enterprise_id;
-  
+
   -- 记录审核记录
   INSERT INTO review_records (
     enterprise_id,
@@ -343,7 +359,7 @@ BEGIN
   ) VALUES (
     p_enterprise_id,
     p_reviewer_id,
-    CASE 
+    CASE
       WHEN p_new_status = 'approved' THEN 'approve'
       WHEN p_new_status = 'rejected' THEN 'reject'
       WHEN p_new_status = 'suspended' THEN 'suspend'
@@ -357,6 +373,7 @@ $$ LANGUAGE plpgsql;
 ```
 
 ### 4.2 邀请过期清理存储过程
+
 ```sql
 CREATE OR REPLACE FUNCTION cleanup_expired_invitations()
 RETURNS INTEGER AS $$
@@ -366,7 +383,7 @@ BEGIN
   UPDATE invitations
   SET status = 'expired'
   WHERE status = 'pending' AND expires_at < NOW();
-  
+
   GET DIAGNOSTICS v_count = ROW_COUNT;
   RETURN v_count;
 END;
@@ -376,6 +393,7 @@ $$ LANGUAGE plpgsql;
 ## 5. 触发器
 
 ### 5.1 更新时间戳触发器
+
 ```sql
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
@@ -396,6 +414,7 @@ CREATE TRIGGER update_system_settings_updated_at BEFORE UPDATE ON system_setting
 ```
 
 ### 5.2 审计日志触发器
+
 ```sql
 CREATE OR REPLACE FUNCTION audit_trigger_function()
 RETURNS TRIGGER AS $$
@@ -425,6 +444,7 @@ CREATE TRIGGER audit_review_records_trigger AFTER INSERT OR UPDATE OR DELETE ON 
 ## 6. Row Level Security (RLS) 策略
 
 ### 6.1 用户表 RLS
+
 ```sql
 -- 启用 RLS
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
@@ -441,13 +461,14 @@ CREATE POLICY "Users can update own profile" ON users
 CREATE POLICY "Super admins can view all users" ON users
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM users 
+      SELECT 1 FROM users
       WHERE id = auth.uid() AND user_type = 'super_admin'
     )
   );
 ```
 
 ### 6.2 企业表 RLS
+
 ```sql
 -- 启用 RLS
 ALTER TABLE enterprises ENABLE ROW LEVEL SECURITY;
@@ -457,7 +478,7 @@ CREATE POLICY "Enterprise users can view own enterprise" ON enterprises
   FOR SELECT USING (
     user_id = auth.uid() OR
     EXISTS (
-      SELECT 1 FROM users 
+      SELECT 1 FROM users
       WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
     )
   );
@@ -474,13 +495,14 @@ CREATE POLICY "Enterprise users can insert own enterprise" ON enterprises
 CREATE POLICY "Admins can update enterprise status" ON enterprises
   FOR UPDATE USING (
     EXISTS (
-      SELECT 1 FROM users 
+      SELECT 1 FROM users
       WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
     )
   );
 ```
 
 ### 6.3 审核记录表 RLS
+
 ```sql
 -- 启用 RLS
 ALTER TABLE review_records ENABLE ROW LEVEL SECURITY;
@@ -489,11 +511,11 @@ ALTER TABLE review_records ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enterprise users can view own review records" ON review_records
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM enterprises 
+      SELECT 1 FROM enterprises
       WHERE id = enterprise_id AND user_id = auth.uid()
     ) OR
     EXISTS (
-      SELECT 1 FROM users 
+      SELECT 1 FROM users
       WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
     )
   );
@@ -502,7 +524,7 @@ CREATE POLICY "Enterprise users can view own review records" ON review_records
 CREATE POLICY "Admins can insert review records" ON review_records
   FOR INSERT WITH CHECK (
     EXISTS (
-      SELECT 1 FROM users 
+      SELECT 1 FROM users
       WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
     )
   );
@@ -511,6 +533,7 @@ CREATE POLICY "Admins can insert review records" ON review_records
 ## 7. 索引优化策略
 
 ### 7.1 复合索引
+
 ```sql
 -- 企业状态和创建时间复合索引
 CREATE INDEX idx_enterprises_status_created_at ON enterprises(status, created_at);
@@ -523,6 +546,7 @@ CREATE INDEX idx_users_type_status ON users(user_type, status);
 ```
 
 ### 7.2 部分索引
+
 ```sql
 -- 只对活跃用户建立索引
 CREATE INDEX idx_users_active ON users(email) WHERE status = 'active';
@@ -534,11 +558,13 @@ CREATE INDEX idx_enterprises_pending ON enterprises(id) WHERE status = 'pending'
 ## 8. 数据备份策略
 
 ### 8.1 自动备份
+
 - 每日全量备份
 - 每小时增量备份
 - 备份保留 30 天
 
 ### 8.2 备份验证
+
 - 定期恢复测试
 - 备份完整性检查
 - 性能影响监控
@@ -546,15 +572,17 @@ CREATE INDEX idx_enterprises_pending ON enterprises(id) WHERE status = 'pending'
 ## 9. 性能监控
 
 ### 9.1 关键指标
+
 - 查询响应时间
 - 并发连接数
 - 索引使用率
 - 表大小增长
 
 ### 9.2 监控查询
+
 ```sql
 -- 慢查询监控
-SELECT 
+SELECT
   query,
   calls,
   total_time,
@@ -565,11 +593,11 @@ ORDER BY mean_time DESC
 LIMIT 10;
 
 -- 表大小监控
-SELECT 
+SELECT
   schemaname,
   tablename,
   pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
 FROM pg_tables
 WHERE schemaname = 'public'
 ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
-``` 
+```

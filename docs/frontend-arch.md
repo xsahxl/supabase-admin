@@ -3,6 +3,7 @@
 ## 1. 技术栈概述
 
 ### 1.1 核心技术
+
 - **框架**: Next.js 14 (App Router)
 - **语言**: TypeScript 5.x
 - **样式**: TailwindCSS 3.x
@@ -14,6 +15,7 @@
 - **工具库**: lodash-es
 
 ### 1.2 开发工具
+
 - **包管理**: pnpm
 - **代码规范**: ESLint + Prettier
 - **类型检查**: TypeScript
@@ -24,6 +26,7 @@
 ## 2. 项目结构
 
 ### 2.1 企业后台结构
+
 ```
 apps/enterprise-admin/
 ├── app/                    # Next.js App Router
@@ -58,6 +61,7 @@ apps/enterprise-admin/
 ```
 
 ### 2.2 Admin后台结构
+
 ```
 apps/admin-panel/
 ├── app/                    # Next.js App Router
@@ -87,6 +91,7 @@ apps/admin-panel/
 ```
 
 ### 2.3 共享包结构
+
 ```
 packages/
 ├── ui/                   # UI组件库
@@ -111,6 +116,7 @@ packages/
 ### 3.1 组件分类
 
 #### 3.1.1 基础UI组件 (packages/ui)
+
 ```typescript
 // Button 组件
 interface ButtonProps {
@@ -144,6 +150,7 @@ interface ModalProps {
 ```
 
 #### 3.1.2 表单组件
+
 ```typescript
 // 企业信息表单
 interface EnterpriseFormProps {
@@ -161,6 +168,7 @@ interface ReviewFormProps {
 ```
 
 #### 3.1.3 布局组件
+
 ```typescript
 // 侧边栏
 interface SidebarProps {
@@ -179,6 +187,7 @@ interface HeaderProps {
 ```
 
 ### 3.2 组件设计原则
+
 - **单一职责**: 每个组件只负责一个功能
 - **可复用性**: 组件应该可以在不同场景下复用
 - **可组合性**: 组件应该可以组合成更复杂的组件
@@ -190,13 +199,14 @@ interface HeaderProps {
 ### 4.1 Zustand Store 设计
 
 #### 4.1.1 认证状态
+
 ```typescript
 interface AuthState {
   user: User | null;
   token: string | null;
   loading: boolean;
   isAuthenticated: boolean;
-  
+
   // Actions
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
@@ -209,7 +219,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
   token: null,
   loading: false,
   isAuthenticated: false,
-  
+
   login: async (email, password) => {
     set({ loading: true });
     try {
@@ -218,31 +228,32 @@ const useAuthStore = create<AuthState>((set, get) => ({
         user: response.user,
         token: response.access_token,
         isAuthenticated: true,
-        loading: false
+        loading: false,
       });
     } catch (error) {
       set({ loading: false });
       throw error;
     }
   },
-  
+
   logout: () => {
     set({
       user: null,
       token: null,
-      isAuthenticated: false
+      isAuthenticated: false,
     });
-  }
+  },
 }));
 ```
 
 #### 4.1.2 企业状态
+
 ```typescript
 interface EnterpriseState {
   enterprise: Enterprise | null;
   loading: boolean;
   error: string | null;
-  
+
   // Actions
   fetchEnterprise: () => Promise<void>;
   updateEnterprise: (data: Partial<Enterprise>) => Promise<void>;
@@ -254,7 +265,7 @@ const useEnterpriseStore = create<EnterpriseState>((set, get) => ({
   enterprise: null,
   loading: false,
   error: null,
-  
+
   fetchEnterprise: async () => {
     set({ loading: true });
     try {
@@ -264,8 +275,8 @@ const useEnterpriseStore = create<EnterpriseState>((set, get) => ({
       set({ error: error.message, loading: false });
     }
   },
-  
-  updateEnterprise: async (data) => {
+
+  updateEnterprise: async data => {
     set({ loading: true });
     try {
       const updated = await enterpriseAPI.updateEnterprise(data);
@@ -273,18 +284,19 @@ const useEnterpriseStore = create<EnterpriseState>((set, get) => ({
     } catch (error) {
       set({ error: error.message, loading: false });
     }
-  }
+  },
 }));
 ```
 
 #### 4.1.3 Admin状态
+
 ```typescript
 interface AdminState {
   enterprises: Enterprise[];
   pagination: Pagination;
   filters: EnterpriseFilters;
   loading: boolean;
-  
+
   // Actions
   fetchEnterprises: (filters?: EnterpriseFilters) => Promise<void>;
   reviewEnterprise: (id: string, review: ReviewData) => Promise<void>;
@@ -296,25 +308,26 @@ const useAdminStore = create<AdminState>((set, get) => ({
   pagination: { page: 1, limit: 20, total: 0 },
   filters: { status: 'all', search: '' },
   loading: false,
-  
-  fetchEnterprises: async (filters) => {
+
+  fetchEnterprises: async filters => {
     set({ loading: true });
     try {
       const response = await adminAPI.getEnterprises(filters);
       set({
         enterprises: response.enterprises,
         pagination: response.pagination,
-        loading: false
+        loading: false,
       });
     } catch (error) {
       set({ loading: false });
       throw error;
     }
-  }
+  },
 }));
 ```
 
 ### 4.2 状态持久化
+
 ```typescript
 // 持久化配置
 import { persist } from 'zustand/middleware';
@@ -326,11 +339,11 @@ const useAuthStore = create(
     }),
     {
       name: 'auth-storage',
-      partialize: (state) => ({
+      partialize: state => ({
         user: state.user,
         token: state.token,
-        isAuthenticated: state.isAuthenticated
-      })
+        isAuthenticated: state.isAuthenticated,
+      }),
     }
   )
 );
@@ -339,6 +352,7 @@ const useAuthStore = create(
 ## 5. API 集成
 
 ### 5.1 API 客户端配置
+
 ```typescript
 // lib/api/client.ts
 import axios from 'axios';
@@ -348,26 +362,26 @@ const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_API_URL,
   timeout: 10000,
   headers: {
-    'Content-Type': 'application/json'
-  }
+    'Content-Type': 'application/json',
+  },
 });
 
 // 请求拦截器
 apiClient.interceptors.request.use(
-  (config) => {
+  config => {
     const token = useAuthStore.getState().token;
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  error => Promise.reject(error)
 );
 
 // 响应拦截器
 apiClient.interceptors.response.use(
-  (response) => response.data,
-  (error) => {
+  response => response.data,
+  error => {
     if (error.response?.status === 401) {
       useAuthStore.getState().logout();
     }
@@ -377,53 +391,49 @@ apiClient.interceptors.response.use(
 ```
 
 ### 5.2 API 服务层
+
 ```typescript
 // lib/api/enterprise.ts
 export const enterpriseAPI = {
-  getMyEnterprise: () => 
-    apiClient.get('/enterprises/me'),
-    
+  getMyEnterprise: () => apiClient.get('/enterprises/me'),
+
   updateEnterprise: (data: Partial<Enterprise>) =>
     apiClient.put('/enterprises/me', data),
-    
-  submitForReview: () =>
-    apiClient.post('/enterprises/me/submit'),
-    
-  getReviewHistory: () =>
-    apiClient.get('/enterprises/me/reviews'),
-    
+
+  submitForReview: () => apiClient.post('/enterprises/me/submit'),
+
+  getReviewHistory: () => apiClient.get('/enterprises/me/reviews'),
+
   uploadDocument: (file: File, type: string) => {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('document_type', type);
     return apiClient.post('/enterprises/me/documents', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
+      headers: { 'Content-Type': 'multipart/form-data' },
     });
-  }
+  },
 };
 
 // lib/api/admin.ts
 export const adminAPI = {
   getEnterprises: (params?: EnterpriseFilters) =>
     apiClient.get('/admin/enterprises', { params }),
-    
-  getEnterprise: (id: string) =>
-    apiClient.get(`/admin/enterprises/${id}`),
-    
+
+  getEnterprise: (id: string) => apiClient.get(`/admin/enterprises/${id}`),
+
   reviewEnterprise: (id: string, review: ReviewData) =>
     apiClient.post(`/admin/enterprises/${id}/review`, review),
-    
-  getStatistics: () =>
-    apiClient.get('/admin/statistics/reviews'),
-    
-  inviteUser: (data: InviteData) =>
-    apiClient.post('/admin/invitations', data)
+
+  getStatistics: () => apiClient.get('/admin/statistics/reviews'),
+
+  inviteUser: (data: InviteData) => apiClient.post('/admin/invitations', data),
 };
 ```
 
 ## 6. 路由设计
 
 ### 6.1 企业后台路由
+
 ```typescript
 // app/(dashboard)/layout.tsx
 export default function DashboardLayout({
@@ -482,6 +492,7 @@ const routes = [
 ```
 
 ### 6.2 Admin后台路由
+
 ```typescript
 // 路由配置
 const adminRoutes = [
@@ -489,38 +500,39 @@ const adminRoutes = [
     path: '/dashboard',
     name: '仪表板',
     icon: HomeIcon,
-    component: AdminDashboardPage
+    component: AdminDashboardPage,
   },
   {
     path: '/enterprises',
     name: '企业管理',
     icon: BuildingIcon,
-    component: EnterprisesPage
+    component: EnterprisesPage,
   },
   {
     path: '/users',
     name: '用户管理',
     icon: UsersIcon,
-    component: UsersPage
+    component: UsersPage,
   },
   {
     path: '/invitations',
     name: '邀请管理',
     icon: MailIcon,
-    component: InvitationsPage
+    component: InvitationsPage,
   },
   {
     path: '/settings',
     name: '系统设置',
     icon: SettingsIcon,
-    component: SettingsPage
-  }
+    component: SettingsPage,
+  },
 ];
 ```
 
 ## 7. 表单处理
 
 ### 7.1 React Hook Form + Zod 集成
+
 ```typescript
 // lib/validations/enterprise.ts
 import { z } from 'zod';
@@ -567,9 +579,9 @@ export function EnterpriseForm({ initialData, onSubmit, loading }: EnterpriseFor
           </FormItem>
         )}
       />
-      
+
       {/* 其他字段... */}
-      
+
       <Button type="submit" loading={loading}>
         保存
       </Button>
@@ -581,13 +593,14 @@ export function EnterpriseForm({ initialData, onSubmit, loading }: EnterpriseFor
 ## 8. 样式系统
 
 ### 8.1 TailwindCSS 配置
+
 ```javascript
 // tailwind.config.js
 module.exports = {
   content: [
     './app/**/*.{js,ts,jsx,tsx}',
     './components/**/*.{js,ts,jsx,tsx}',
-    '../../packages/ui/**/*.{js,ts,jsx,tsx}'
+    '../../packages/ui/**/*.{js,ts,jsx,tsx}',
   ],
   theme: {
     extend: {
@@ -596,7 +609,7 @@ module.exports = {
           50: '#eff6ff',
           500: '#3b82f6',
           600: '#2563eb',
-          700: '#1d4ed8'
+          700: '#1d4ed8',
         },
         gray: {
           50: '#f9fafb',
@@ -608,51 +621,52 @@ module.exports = {
           600: '#4b5563',
           700: '#374151',
           800: '#1f2937',
-          900: '#111827'
-        }
+          900: '#111827',
+        },
       },
       spacing: {
-        '18': '4.5rem',
-        '88': '22rem'
+        18: '4.5rem',
+        88: '22rem',
       },
       animation: {
         'fade-in': 'fadeIn 0.5s ease-in-out',
-        'slide-up': 'slideUp 0.3s ease-out'
-      }
-    }
+        'slide-up': 'slideUp 0.3s ease-out',
+      },
+    },
   },
-  plugins: [
-    require('@tailwindcss/forms'),
-    require('@tailwindcss/typography')
-  ]
+  plugins: [require('@tailwindcss/forms'), require('@tailwindcss/typography')],
 };
 ```
 
 ### 8.2 组件样式
+
 ```typescript
 // 基础按钮样式
 const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background",
+  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-background',
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border border-input hover:bg-accent hover:text-accent-foreground",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "underline-offset-4 hover:underline text-primary"
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        destructive:
+          'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        outline:
+          'border border-input hover:bg-accent hover:text-accent-foreground',
+        secondary:
+          'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        link: 'underline-offset-4 hover:underline text-primary',
       },
       size: {
-        default: "h-10 py-2 px-4",
-        sm: "h-9 px-3 rounded-md",
-        lg: "h-11 px-8 rounded-md"
-      }
+        default: 'h-10 py-2 px-4',
+        sm: 'h-9 px-3 rounded-md',
+        lg: 'h-11 px-8 rounded-md',
+      },
     },
     defaultVariants: {
-      variant: "default",
-      size: "default"
-    }
+      variant: 'default',
+      size: 'default',
+    },
   }
 );
 ```
@@ -660,6 +674,7 @@ const buttonVariants = cva(
 ## 9. 错误处理
 
 ### 9.1 错误边界
+
 ```typescript
 // components/ErrorBoundary.tsx
 class ErrorBoundary extends React.Component<
@@ -705,6 +720,7 @@ class ErrorBoundary extends React.Component<
 ```
 
 ### 9.2 全局错误处理
+
 ```typescript
 // lib/error-handler.ts
 export class AppError extends Error {
@@ -726,7 +742,7 @@ export const handleError = (error: unknown) => {
   } else {
     toast.error('发生未知错误');
   }
-  
+
   // 记录错误日志
   console.error('Application error:', error);
 };
@@ -735,6 +751,7 @@ export const handleError = (error: unknown) => {
 ## 10. 性能优化
 
 ### 10.1 代码分割
+
 ```typescript
 // 动态导入组件
 const EnterpriseForm = dynamic(() => import('@/components/forms/EnterpriseForm'), {
@@ -747,6 +764,7 @@ const AdminDashboard = dynamic(() => import('@/components/admin/Dashboard'), {
 ```
 
 ### 10.2 图片优化
+
 ```typescript
 // 使用 Next.js Image 组件
 import Image from 'next/image';
@@ -762,6 +780,7 @@ import Image from 'next/image';
 ```
 
 ### 10.3 缓存策略
+
 ```typescript
 // API 缓存
 const useEnterprise = (id: string) => {
@@ -769,7 +788,7 @@ const useEnterprise = (id: string) => {
     queryKey: ['enterprise', id],
     queryFn: () => enterpriseAPI.getEnterprise(id),
     staleTime: 5 * 60 * 1000, // 5分钟
-    cacheTime: 10 * 60 * 1000  // 10分钟
+    cacheTime: 10 * 60 * 1000, // 10分钟
   });
 };
 ```
@@ -777,6 +796,7 @@ const useEnterprise = (id: string) => {
 ## 11. 测试策略
 
 ### 11.1 单元测试
+
 ```typescript
 // __tests__/components/Button.test.tsx
 import { render, screen, fireEvent } from '@testing-library/react';
@@ -791,7 +811,7 @@ describe('Button', () => {
   it('handles click events', () => {
     const handleClick = jest.fn();
     render(<Button onClick={handleClick}>Click me</Button>);
-    
+
     fireEvent.click(screen.getByRole('button'));
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
@@ -804,6 +824,7 @@ describe('Button', () => {
 ```
 
 ### 11.2 集成测试
+
 ```typescript
 // __tests__/pages/enterprise.test.tsx
 import { render, screen, waitFor } from '@testing-library/react';
@@ -812,7 +833,7 @@ import { EnterprisePage } from '@/app/(dashboard)/enterprise/page';
 describe('EnterprisePage', () => {
   it('loads and displays enterprise data', async () => {
     render(<EnterprisePage />);
-    
+
     await waitFor(() => {
       expect(screen.getByText('企业信息')).toBeInTheDocument();
     });
@@ -823,6 +844,7 @@ describe('EnterprisePage', () => {
 ## 12. 部署配置
 
 ### 12.1 Vercel 配置
+
 ```json
 // vercel.json
 {
@@ -839,6 +861,7 @@ describe('EnterprisePage', () => {
 ```
 
 ### 12.2 环境变量
+
 ```bash
 # .env.local
 NEXT_PUBLIC_API_URL=https://your-project.supabase.co/rest/v1
@@ -851,6 +874,7 @@ NEXTAUTH_URL=http://localhost:3000
 ## 13. 监控和分析
 
 ### 13.1 性能监控
+
 ```typescript
 // lib/analytics.ts
 export const trackEvent = (event: string, properties?: Record<string, any>) => {
@@ -866,23 +890,30 @@ export const trackError = (error: Error, context?: string) => {
   trackEvent('error', {
     message: error.message,
     stack: error.stack,
-    context
+    context,
   });
 };
 ```
 
 ### 13.2 用户行为分析
+
 ```typescript
 // hooks/useAnalytics.ts
 export const useAnalytics = () => {
-  const trackEvent = useCallback((event: string, properties?: Record<string, any>) => {
-    // 实现事件跟踪
-  }, []);
+  const trackEvent = useCallback(
+    (event: string, properties?: Record<string, any>) => {
+      // 实现事件跟踪
+    },
+    []
+  );
 
-  const trackPageView = useCallback((path: string) => {
-    trackEvent('page_view', { path });
-  }, [trackEvent]);
+  const trackPageView = useCallback(
+    (path: string) => {
+      trackEvent('page_view', { path });
+    },
+    [trackEvent]
+  );
 
   return { trackEvent, trackPageView };
 };
-``` 
+```
