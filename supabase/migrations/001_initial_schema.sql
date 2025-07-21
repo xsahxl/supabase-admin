@@ -275,7 +275,7 @@ BEGIN
   INSERT INTO public.users (auth_user_id, role, first_name, last_name)
   VALUES (
     NEW.id,
-    'enterprise', -- 默认为企业用户类型
+    'user', -- 默认为普通用户类型
     COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
     COALESCE(NEW.raw_user_meta_data->>'last_name', '')
   );
