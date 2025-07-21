@@ -1,6 +1,7 @@
 -- 初始数据库架构迁移
 -- 创建时间: 2024-01-01
 -- 描述: 创建企业管理系统的基础表结构和安全策略
+-- 使用 Supabase Auth 进行认证，业务数据存储在 public.users
 
 -- 启用必要的扩展
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";  -- 用于生成UUID
@@ -10,26 +11,19 @@ CREATE EXTENSION IF NOT EXISTS "pgcrypto";   -- 用于密码加密
 -- 1. 用户相关表
 -- ========================================
 
--- 用户表 - 存储系统所有用户的基本信息
+-- 用户表 - 存储业务相关的用户信息
 CREATE TABLE users (
-  -- 主键：使用UUID确保全局唯一性，避免ID冲突
+  -- 主键：使用UUID确保全局唯一性
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
-  -- 邮箱：用户登录凭证，全局唯一
-  email VARCHAR(255) UNIQUE NOT NULL,
-  
-  -- 密码哈希：存储加密后的密码，不存储明文
-  password_hash VARCHAR(255) NOT NULL,
+  -- 关联到 auth.users 表
+  auth_user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
   
   -- 用户类型：定义用户在系统中的角色和权限
   -- enterprise: 企业用户，可以管理自己的企业信息
   -- admin: 管理员，可以审核企业信息
   -- super_admin: 超级管理员，拥有所有权限
   user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('enterprise', 'admin', 'super_admin')),
-  
-  
-  -- 邮箱验证状态：标识用户邮箱是否已验证
-  email_verified BOOLEAN DEFAULT FALSE,
   
   -- 头像URL：用户头像图片的存储地址
   avatar_url TEXT,
@@ -53,10 +47,11 @@ CREATE TABLE users (
   created_by UUID REFERENCES users(id),
   
   -- 元数据：存储额外的用户信息，使用JSONB格式便于扩展
-  metadata JSONB DEFAULT '{}'
+  metadata JSONB DEFAULT '{}',
+  
+  -- 确保一个 auth_user_id 只能对应一个业务用户
+  UNIQUE(auth_user_id)
 );
-
-
 
 -- ========================================
 -- 2. 企业相关表
@@ -134,10 +129,6 @@ CREATE TABLE enterprises (
   UNIQUE(user_id)
 );
 
-
-
-
-
 -- ========================================
 -- 3. 审核相关表
 -- ========================================
@@ -166,94 +157,61 @@ CREATE TABLE review_records (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
-
-
 -- ========================================
--- 4. 邀请相关表
--- ========================================
-
-
-
--- ========================================
--- 5. 日志相关表
--- ========================================
-
-
-
-
-
--- ========================================
--- 6. 系统配置表
--- ========================================
-
-
-
--- ========================================
--- 7. 索引创建
+-- 4. 索引创建
 -- ========================================
 
 -- 用户表索引
-CREATE INDEX idx_users_email ON users(email);                    -- 邮箱查询索引
-CREATE INDEX idx_users_user_type ON users(user_type);           -- 用户类型查询索引
-CREATE INDEX idx_users_created_at ON users(created_at);         -- 创建时间查询索引
-
-
+CREATE INDEX idx_users_auth_user_id ON users(auth_user_id);
+CREATE INDEX idx_users_user_type ON users(user_type);
+CREATE INDEX idx_users_created_at ON users(created_at);
 
 -- 企业表索引
-CREATE INDEX idx_enterprises_user_id ON enterprises(user_id);     -- 用户ID查询索引
-CREATE INDEX idx_enterprises_status ON enterprises(status);       -- 企业状态查询索引
-CREATE INDEX idx_enterprises_created_at ON enterprises(created_at); -- 创建时间查询索引
-CREATE INDEX idx_enterprises_name ON enterprises(name);           -- 企业名称查询索引
-CREATE INDEX idx_enterprises_status_created_at ON enterprises(status, created_at); -- 状态和创建时间复合索引
-CREATE INDEX idx_enterprises_pending ON enterprises(id) WHERE status = 'pending'; -- 待审核企业索引
-
-
-
-
+CREATE INDEX idx_enterprises_user_id ON enterprises(user_id);
+CREATE INDEX idx_enterprises_status ON enterprises(status);
+CREATE INDEX idx_enterprises_created_at ON enterprises(created_at);
+CREATE INDEX idx_enterprises_name ON enterprises(name);
+CREATE INDEX idx_enterprises_status_created_at ON enterprises(status, created_at);
+CREATE INDEX idx_enterprises_pending ON enterprises(id) WHERE status = 'pending';
 
 -- 审核记录表索引
-CREATE INDEX idx_review_records_enterprise_id ON review_records(enterprise_id); -- 企业ID查询索引
-CREATE INDEX idx_review_records_reviewer_id ON review_records(reviewer_id);     -- 审核员ID查询索引
-CREATE INDEX idx_review_records_created_at ON review_records(created_at);       -- 创建时间查询索引
-CREATE INDEX idx_review_records_enterprise_created ON review_records(enterprise_id, created_at); -- 企业和创建时间复合索引
-
-
+CREATE INDEX idx_review_records_enterprise_id ON review_records(enterprise_id);
+CREATE INDEX idx_review_records_reviewer_id ON review_records(reviewer_id);
+CREATE INDEX idx_review_records_created_at ON review_records(created_at);
+CREATE INDEX idx_review_records_enterprise_created ON review_records(enterprise_id, created_at);
 
 -- ========================================
--- 8. 视图创建
+-- 5. 视图创建
 -- ========================================
 
 -- 企业信息视图 - 聚合企业相关的所有信息
 CREATE VIEW enterprise_details AS
 SELECT
   e.*,
-  u.email as user_email,                    -- 用户邮箱
-  u.first_name,                             -- 用户名字
-  u.last_name                               -- 用户姓氏
+  u.first_name,
+  u.last_name,
+  au.email as user_email
 FROM enterprises e
-LEFT JOIN users u ON e.user_id = u.id;
+LEFT JOIN users u ON e.user_id = u.id
+LEFT JOIN auth.users au ON u.auth_user_id = au.id;
 
 -- 审核统计视图 - 统计审核员的工作情况
 CREATE VIEW review_statistics AS
 SELECT
-  reviewer_id,                              -- 审核员ID
-  u.email as reviewer_email,                -- 审核员邮箱
-  COUNT(*) as total_reviews,                -- 总审核数量
-  COUNT(CASE WHEN action = 'approve' THEN 1 END) as approved_count,    -- 通过数量
-  COUNT(CASE WHEN action = 'reject' THEN 1 END) as rejected_count,     -- 拒绝数量
-  AVG(review_time_seconds) as avg_review_time_seconds -- 平均审核时间
-FROM (
-  SELECT 
-    reviewer_id,
-    action,
-    EXTRACT(EPOCH FROM (created_at - LAG(created_at) OVER (PARTITION BY reviewer_id ORDER BY created_at))) as review_time_seconds
-  FROM review_records
-) rr
+  reviewer_id,
+  u.first_name,
+  u.last_name,
+  au.email as reviewer_email,
+  COUNT(*) as total_reviews,
+  COUNT(CASE WHEN action = 'approve' THEN 1 END) as approved_count,
+  COUNT(CASE WHEN action = 'reject' THEN 1 END) as rejected_count
+FROM review_records rr
 LEFT JOIN users u ON rr.reviewer_id = u.id
-GROUP BY reviewer_id, u.email;
+LEFT JOIN auth.users au ON u.auth_user_id = au.id
+GROUP BY reviewer_id, u.first_name, u.last_name, au.email;
 
 -- ========================================
--- 9. 存储过程创建
+-- 6. 存储过程创建
 -- ========================================
 
 -- 企业状态更新存储过程 - 统一处理企业状态变更
@@ -293,10 +251,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
-
-
 -- ========================================
--- 10. 触发器创建
+-- 7. 触发器创建
 -- ========================================
 
 -- 更新时间戳触发器函数 - 自动更新updated_at字段
@@ -312,10 +268,28 @@ $$ LANGUAGE plpgsql;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_enterprises_updated_at BEFORE UPDATE ON enterprises FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+-- 当 auth.users 表有新用户注册时，自动创建对应的业务用户记录
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.users (auth_user_id, user_type, first_name, last_name)
+  VALUES (
+    NEW.id,
+    'enterprise', -- 默认为企业用户类型
+    COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
+    COALESCE(NEW.raw_user_meta_data->>'last_name', '')
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- 创建触发器
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION handle_new_user();
 
 -- ========================================
--- 11. Row Level Security (RLS) 策略
+-- 8. Row Level Security (RLS) 策略
 -- ========================================
 
 -- 用户表 RLS - 控制用户数据的访问权限
@@ -323,22 +297,20 @@ ALTER TABLE users ENABLE ROW LEVEL SECURITY;
 
 -- 用户只能查看自己的信息
 CREATE POLICY "Users can view own profile" ON users
-  FOR SELECT USING (auth.uid() = id);
+  FOR SELECT USING (auth_user_id = auth.uid());
 
 -- 用户只能更新自己的信息
 CREATE POLICY "Users can update own profile" ON users
-  FOR UPDATE USING (auth.uid() = id);
+  FOR UPDATE USING (auth_user_id = auth.uid());
 
 -- 超级管理员可以查看所有用户
 CREATE POLICY "Super admins can view all users" ON users
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM users
-      WHERE id = auth.uid() AND user_type = 'super_admin'
+      WHERE auth_user_id = auth.uid() AND user_type = 'super_admin'
     )
   );
-
-
 
 -- 企业表 RLS - 控制企业数据的访问权限
 ALTER TABLE enterprises ENABLE ROW LEVEL SECURITY;
@@ -346,33 +318,39 @@ ALTER TABLE enterprises ENABLE ROW LEVEL SECURITY;
 -- 企业用户只能查看自己的企业
 CREATE POLICY "Enterprise users can view own enterprise" ON enterprises
   FOR SELECT USING (
-    user_id = auth.uid() OR
+    user_id IN (
+      SELECT id FROM users WHERE auth_user_id = auth.uid()
+    ) OR
     EXISTS (
       SELECT 1 FROM users
-      WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
+      WHERE auth_user_id = auth.uid() AND user_type IN ('admin', 'super_admin')
     )
   );
 
 -- 企业用户只能更新自己的企业
 CREATE POLICY "Enterprise users can update own enterprise" ON enterprises
-  FOR UPDATE USING (user_id = auth.uid());
+  FOR UPDATE USING (
+    user_id IN (
+      SELECT id FROM users WHERE auth_user_id = auth.uid()
+    )
+  );
 
 -- 企业用户只能插入自己的企业
 CREATE POLICY "Enterprise users can insert own enterprise" ON enterprises
-  FOR INSERT WITH CHECK (user_id = auth.uid());
+  FOR INSERT WITH CHECK (
+    user_id IN (
+      SELECT id FROM users WHERE auth_user_id = auth.uid()
+    )
+  );
 
 -- Admin 用户可以更新企业状态
 CREATE POLICY "Admins can update enterprise status" ON enterprises
   FOR UPDATE USING (
     EXISTS (
       SELECT 1 FROM users
-      WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
+      WHERE auth_user_id = auth.uid() AND user_type IN ('admin', 'super_admin')
     )
   );
-
-
-
-
 
 -- 审核记录表 RLS - 控制审核记录的访问权限
 ALTER TABLE review_records ENABLE ROW LEVEL SECURITY;
@@ -381,12 +359,13 @@ ALTER TABLE review_records ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Enterprise users can view own review records" ON review_records
   FOR SELECT USING (
     EXISTS (
-      SELECT 1 FROM enterprises
-      WHERE id = enterprise_id AND user_id = auth.uid()
+      SELECT 1 FROM enterprises e
+      JOIN users u ON e.user_id = u.id
+      WHERE e.id = enterprise_id AND u.auth_user_id = auth.uid()
     ) OR
     EXISTS (
       SELECT 1 FROM users
-      WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
+      WHERE auth_user_id = auth.uid() AND user_type IN ('admin', 'super_admin')
     )
   );
 
@@ -395,34 +374,8 @@ CREATE POLICY "Admins can insert review records" ON review_records
   FOR INSERT WITH CHECK (
     EXISTS (
       SELECT 1 FROM users
-      WHERE id = auth.uid() AND user_type IN ('admin', 'super_admin')
+      WHERE auth_user_id = auth.uid() AND user_type IN ('admin', 'super_admin')
     )
   );
-
-
-
--- ========================================
--- 12. 初始数据插入
--- ========================================
-
--- 创建超级管理员用户
--- 注意：密码需要在应用层进行哈希处理，这里使用占位符
-INSERT INTO users (
-  email, 
-  password_hash, 
-  user_type, 
-  first_name, 
-  last_name, 
-  email_verified,
-  created_at
-) VALUES (
-  'admin@example.com', 
-  '73e1f97bbda718d98d85aa73e4571f42861615b2d2b3194ff196bc86f994b82f',  -- 需要在应用层替换为真实的哈希密码
-  'super_admin', 
-  '系统', 
-  '管理员', 
-  true,
-  NOW()
-) ON CONFLICT (email) DO NOTHING;  -- 如果邮箱已存在则不插入
 
 COMMIT; 
