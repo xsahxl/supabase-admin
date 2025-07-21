@@ -241,8 +241,14 @@ SELECT
   COUNT(*) as total_reviews,                -- 总审核数量
   COUNT(CASE WHEN action = 'approve' THEN 1 END) as approved_count,    -- 通过数量
   COUNT(CASE WHEN action = 'reject' THEN 1 END) as rejected_count,     -- 拒绝数量
-  AVG(EXTRACT(EPOCH FROM (created_at - LAG(created_at) OVER (PARTITION BY reviewer_id ORDER BY created_at)))) as avg_review_time_seconds -- 平均审核时间
-FROM review_records rr
+  AVG(review_time_seconds) as avg_review_time_seconds -- 平均审核时间
+FROM (
+  SELECT 
+    reviewer_id,
+    action,
+    EXTRACT(EPOCH FROM (created_at - LAG(created_at) OVER (PARTITION BY reviewer_id ORDER BY created_at))) as review_time_seconds
+  FROM review_records
+) rr
 LEFT JOIN users u ON rr.reviewer_id = u.id
 GROUP BY reviewer_id, u.email;
 
