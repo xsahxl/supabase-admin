@@ -39,7 +39,7 @@ export function LoginForm({
       });
       if (error) throw error;
       // Update this route to redirect to an authenticated route. The user already has an active session.
-      router.push("/info");
+      router.push("/company");
       // 不在这里设置 setIsLoading(false)，让页面跳转后自动重置状态
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred");
