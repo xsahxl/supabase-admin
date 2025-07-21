@@ -70,6 +70,7 @@ supabase-test/
 ### 环境要求
 
 - Node.js 18+
+- pnpm 8+
 - Supabase CLI
 - Git
 
@@ -79,27 +80,59 @@ supabase-test/
 
 ```bash
 git clone <repository-url>
-cd supabase-test
+cd supabase-admin
 ```
 
-2. 安装依赖
+2. 运行自动设置脚本
 
 ```bash
-npm install
+./scripts/setup.sh
 ```
 
-3. 配置 Supabase
+或者手动执行以下步骤：
 
 ```bash
-supabase init
+# 安装依赖
+pnpm install
+
+# 启动 Supabase 本地开发环境
 supabase start
+
+# 应用数据库迁移
+supabase db reset
+
+# 生成 TypeScript 类型
+supabase gen types typescript --local > packages/types/src/database.ts
+
+# 构建共享包
+pnpm --filter @supabase-admin/types build
+pnpm --filter @supabase-admin/utils build
+pnpm --filter @supabase-admin/ui build
 ```
+
+3. 配置环境变量
+
+复制 `env.example` 到 `.env.local` 并配置必要的环境变量。
 
 4. 运行开发环境
 
 ```bash
-npm run dev
+pnpm dev
 ```
+
+### 服务访问
+
+设置完成后，可以访问以下服务：
+
+- **Supabase Studio**: http://localhost:54323
+- **API**: http://localhost:54321
+- **数据库**: localhost:54322
+- **邮件测试**: http://localhost:54324
+
+### 默认管理员凭据
+
+- **Email**: `supabase_admin@admin.com`
+- **Password**: `this_password_is_insecure_and_should_be_updated`
 
 ## 开发指南
 
