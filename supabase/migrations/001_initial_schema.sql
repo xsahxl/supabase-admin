@@ -417,7 +417,7 @@ INSERT INTO users (
   created_at
 ) VALUES (
   'admin@example.com', 
-  'temporary_password_hash_placeholder',  -- 需要在应用层替换为真实的哈希密码
+  '73e1f97bbda718d98d85aa73e4571f42861615b2d2b3194ff196bc86f994b82f',  -- 需要在应用层替换为真实的哈希密码
   'super_admin', 
   '系统', 
   '管理员', 
