@@ -6,6 +6,7 @@ import type { Enterprise } from '@/lib/types/enterprise';
 import { CompanyForm } from '@/components/company/company-form';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth';
+import { usePathname } from 'next/navigation';
 
 const CompanyPage: React.FC = () => {
   const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
@@ -14,6 +15,8 @@ const CompanyPage: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<Enterprise | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+
+  const pathname = usePathname();
 
   const fetchEnterprises = async () => {
     setLoading(true);
@@ -33,6 +36,7 @@ const CompanyPage: React.FC = () => {
   }, []);
 
   const handleAdd = () => {
+    if (enterprises.length >= 1) return;
     setEditing(null);
     setShowForm(true);
   };
@@ -87,7 +91,13 @@ const CompanyPage: React.FC = () => {
     <div className="max-w-4xl mx-auto p-4">
       <div className="flex justify-between items-center mb-4">
         <h1 className="text-2xl font-bold">企业管理</h1>
-        <Button onClick={handleAdd} aria-label="新增企业" tabIndex={0}>
+        <Button
+          onClick={handleAdd}
+          aria-label="新增企业"
+          tabIndex={0}
+          disabled={enterprises.length >= 1}
+          className={enterprises.length >= 1 ? 'opacity-50 cursor-not-allowed' : ''}
+        >
           新增企业
         </Button>
       </div>

@@ -12,7 +12,7 @@ const handleKeyDown = (event: KeyboardEvent<HTMLAnchorElement>) => {
 
 const Sidebar: FC = () => {
   const pathname = usePathname();
-  const isCompaniesActive = pathname.startsWith('/companies');
+  const isCompaniesActive = pathname === '/company';
 
   return (
     <nav
