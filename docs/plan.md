@@ -18,24 +18,24 @@
 
 #### 1.2 共享包开发
 
-- [ ] **packages/types** - 类型定义包
-  - [ ] 用户相关类型
-  - [ ] 企业相关类型
-  - [ ] API 响应类型
-  - [ ] 表单验证类型
+- [x] **packages/types** - 类型定义包
+  - [x] 用户相关类型
+  - [x] 企业相关类型
+  - [x] API 响应类型
+  - [x] 表单验证类型
 
-- [ ] **packages/utils** - 工具函数包
-  - [ ] API 客户端封装
-  - [ ] 认证工具函数
-  - [ ] 表单验证工具
-  - [ ] 日期处理工具
-  - [ ] 文件上传工具
+- [x] **packages/utils** - 工具函数包
+  - [x] API 客户端封装
+  - [x] 认证工具函数
+  - [x] 表单验证工具
+  - [x] 日期处理工具
+  - [x] 文件上传工具
 
-- [ ] **packages/ui** - UI 组件库
-  - [ ] 基础组件 (Button, Input, Select, etc.)
-  - [ ] 表单组件 (Form, Field, etc.)
-  - [ ] 布局组件 (Layout, Sidebar, Header, etc.)
-  - [ ] 业务组件 (DataTable, StatusBadge, etc.)
+- [x] **packages/ui** - UI 组件库
+  - [x] 基础组件 (Button, Input, Select, etc.)
+  - [x] 表单组件 (Form, Field, etc.)
+  - [x] 布局组件 (Layout, Sidebar, Header, etc.)
+  - [x] 业务组件 (DataTable, StatusBadge, etc.)
 
 #### 1.3 数据库设计
 
