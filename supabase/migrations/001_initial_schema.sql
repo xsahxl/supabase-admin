@@ -28,9 +28,8 @@ CREATE TABLE users (
   -- 头像URL：用户头像图片的存储地址
   avatar_url TEXT,
   
-  -- 用户姓名：分为名和姓，便于国际化
-  first_name VARCHAR(100),
-  last_name VARCHAR(100),
+  -- 用户邮箱，唯一且必填
+  email VARCHAR(255) NOT NULL UNIQUE,
   
   -- 电话号码：用户联系方式
   phone VARCHAR(20),
@@ -188,27 +187,21 @@ CREATE INDEX idx_review_records_enterprise_created ON review_records(enterprise_
 CREATE VIEW enterprise_details AS
 SELECT
   e.*,
-  u.first_name,
-  u.last_name,
   au.email as user_email
 FROM enterprises e
-LEFT JOIN users u ON e.auth_user_id = u.auth_user_id
-LEFT JOIN auth.users au ON u.auth_user_id = au.id;
+LEFT JOIN auth.users au ON e.auth_user_id = au.id;
 
 -- 审核统计视图 - 统计审核员的工作情况
 CREATE VIEW review_statistics AS
 SELECT
   reviewer_id,
-  u.first_name,
-  u.last_name,
   au.email as reviewer_email,
   COUNT(*) as total_reviews,
   COUNT(CASE WHEN action = 'approve' THEN 1 END) as approved_count,
   COUNT(CASE WHEN action = 'reject' THEN 1 END) as rejected_count
 FROM review_records rr
-LEFT JOIN users u ON rr.reviewer_id = u.id
-LEFT JOIN auth.users au ON u.auth_user_id = au.id
-GROUP BY reviewer_id, u.first_name, u.last_name, au.email;
+LEFT JOIN auth.users au ON rr.reviewer_id = au.id
+GROUP BY reviewer_id, au.email;
 
 -- ========================================
 -- 6. 存储过程创建
@@ -272,12 +265,11 @@ CREATE TRIGGER update_enterprises_updated_at BEFORE UPDATE ON enterprises FOR EA
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.users (auth_user_id, role, first_name, last_name)
+  INSERT INTO public.users (auth_user_id, role, email)
   VALUES (
     NEW.id,
     'user', -- 默认为普通用户类型
-    COALESCE(NEW.raw_user_meta_data->>'first_name', ''),
-    COALESCE(NEW.raw_user_meta_data->>'last_name', '')
+    NEW.email
   );
   RETURN NEW;
 END;

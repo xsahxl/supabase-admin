@@ -13,6 +13,7 @@ const handleKeyDown = (event: KeyboardEvent<HTMLAnchorElement>) => {
 const Sidebar: FC = () => {
   const pathname = usePathname();
   const isCompaniesActive = pathname === '/company';
+  const isUsersActive = pathname === '/users';
 
   return (
     <nav
@@ -30,6 +31,18 @@ const Sidebar: FC = () => {
         onKeyDown={handleKeyDown}
       >
         企业信息
+      </Link>
+      <Link
+        href="/users"
+        className={`block py-3 px-4 rounded-lg font-medium transition-colors duration-150 focus:outline-none mt-2 ${isUsersActive
+          ? 'bg-blue-500 text-white hover:bg-blue-600 focus:bg-blue-600'
+          : 'text-gray-800 hover:bg-gray-200 focus:bg-gray-200'
+          }`}
+        tabIndex={0}
+        aria-label="用户管理"
+        onKeyDown={handleKeyDown}
+      >
+        用户管理
       </Link>
     </nav>
   );
