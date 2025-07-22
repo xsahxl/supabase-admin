@@ -41,6 +41,7 @@ export const createUser = async (userData: CreateUserData): Promise<User> => {
 
 // 更新用户
 export const updateUser = async (id: string, userData: UpdateUserData): Promise<User> => {
+  console.log('updateUser', id, userData);
   const { data, error } = await supabase
     .from('users')
     .update(userData)

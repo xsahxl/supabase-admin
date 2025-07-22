@@ -94,3 +94,13 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
+
+在 Supabase/Postgres RLS 策略中，USING 和 WITH CHECK 的作用不同：
+USING：决定“谁可以操作哪些行”。比如：auth_user_id = auth.uid()，表示用户只能操作自己的数据。
+WITH CHECK：决定“用户能把数据改成什么样”。比如：防止用户把自己的 role 改成 super_admin。
+对于“不能编辑角色”这个需求：
+USING 只需要判断用户是不是在操作自己的行（auth_user_id = auth.uid()），不需要判断 role 字段。
+WITH CHECK 才需要判断 role 字段，防止用户修改自己的角色。
+总结：
+USING 只管“能不能操作这行”。
+WITH CHECK 才管“能不能把这行改成什么样”。
