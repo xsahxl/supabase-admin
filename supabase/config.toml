@@ -97,6 +97,11 @@ port = 54324
 # admin_email = "admin@email.com"
 # sender_name = "Admin"
 
+# 自定义邮箱模板配置
+[auth.email.template.confirmation]
+subject = "Confirm your signup"
+content_path = "./supabase/templates/confirmation.html"
+
 [storage]
 enabled = true
 # The maximum file size allowed (e.g. "5MB", "500KB").
