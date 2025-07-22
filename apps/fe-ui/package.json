@@ -1,9 +1,9 @@
 {
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "next dev --port 7777 --turbopack",
     "build": "next build",
-    "start": "next start",
+    "start": "next start --port 7777",
     "lint": "next lint"
   },
   "dependencies": {
