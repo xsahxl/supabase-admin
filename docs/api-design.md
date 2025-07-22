@@ -626,7 +626,7 @@ socket.send(
   JSON.stringify({
     event: 'phx_join',
     topic: 'enterprise_status',
-    payload: { user_id: 'user_uuid' },
+    payload: { auth_user_id: 'user_uuid' },
   })
 );
 

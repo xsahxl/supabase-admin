@@ -1,6 +1,6 @@
 export type Enterprise = {
   id: string;
-  user_id: string; // 新增 user_id 字段
+  auth_user_id: string; // 认证用户ID
   name: string;
   type: string;
   industry?: string;

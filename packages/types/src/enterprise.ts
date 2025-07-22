@@ -20,7 +20,7 @@ export enum EnterpriseType {
 // 企业基础信息
 export interface Enterprise {
   id: string;
-  userId: string;
+  authUserId: string;
   name: string;
   type: EnterpriseType;
   industry?: string;

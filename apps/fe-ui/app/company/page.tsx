@@ -72,11 +72,11 @@ const CompanyPage: React.FC = () => {
       if (editing) {
         await updateEnterprise(editing.id, cleanedData);
       } else {
-        // 直接从 store 获取 user_id
+        // 直接从 store 获取 auth_user_id
         const user = useAuthStore.getState().user;
-        const user_id = user?.id;
-        if (!user_id) throw new Error('未获取到当前用户信息');
-        await createEnterprise({ ...cleanedData, user_id });
+        const auth_user_id = user?.id;
+        if (!auth_user_id) throw new Error('未获取到当前用户信息');
+        await createEnterprise({ ...cleanedData, auth_user_id });
       }
       setShowForm(false);
       await fetchEnterprises();

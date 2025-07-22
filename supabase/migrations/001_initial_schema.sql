@@ -62,8 +62,8 @@ CREATE TABLE enterprises (
   -- 主键
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   
-  -- 用户ID：关联到users表，一对一关系
-  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  -- 用户ID：关联到认证用户，一对一关系
+  auth_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   
   -- 企业名称：企业的正式名称
   name VARCHAR(255) NOT NULL,
@@ -126,7 +126,7 @@ CREATE TABLE enterprises (
   metadata JSONB DEFAULT '{}',
   
   -- 确保一个用户只能有一个企业
-  UNIQUE(user_id)
+  UNIQUE(auth_user_id)
 );
 
 -- ========================================
@@ -167,7 +167,7 @@ CREATE INDEX idx_users_role ON users(role);
 CREATE INDEX idx_users_created_at ON users(created_at);
 
 -- 企业表索引
-CREATE INDEX idx_enterprises_user_id ON enterprises(user_id);
+CREATE INDEX idx_enterprises_auth_user_id ON enterprises(auth_user_id);
 CREATE INDEX idx_enterprises_status ON enterprises(status);
 CREATE INDEX idx_enterprises_created_at ON enterprises(created_at);
 CREATE INDEX idx_enterprises_name ON enterprises(name);
@@ -192,7 +192,7 @@ SELECT
   u.last_name,
   au.email as user_email
 FROM enterprises e
-LEFT JOIN users u ON e.user_id = u.id
+LEFT JOIN users u ON e.auth_user_id = u.auth_user_id
 LEFT JOIN auth.users au ON u.auth_user_id = au.id;
 
 -- 审核统计视图 - 统计审核员的工作情况

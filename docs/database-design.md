@@ -78,7 +78,7 @@ CREATE INDEX idx_user_profiles_user_id ON user_profiles(user_id);
 ```sql
 CREATE TABLE enterprises (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  auth_user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   name VARCHAR(255) NOT NULL,
   type VARCHAR(100) NOT NULL,
   industry VARCHAR(100),
@@ -98,11 +98,11 @@ CREATE TABLE enterprises (
   approved_at TIMESTAMP WITH TIME ZONE,
   approved_by UUID REFERENCES users(id),
   metadata JSONB DEFAULT '{}',
-  UNIQUE(user_id)
+  UNIQUE(auth_user_id)
 );
 
 -- 索引
-CREATE INDEX idx_enterprises_user_id ON enterprises(user_id);
+CREATE INDEX idx_enterprises_auth_user_id ON enterprises(auth_user_id);
 CREATE INDEX idx_enterprises_status ON enterprises(status);
 CREATE INDEX idx_enterprises_created_at ON enterprises(created_at);
 CREATE INDEX idx_enterprises_name ON enterprises(name);
@@ -296,7 +296,7 @@ SELECT
   COUNT(ed.id) as document_count,
   COUNT(ec.id) as contact_count
 FROM enterprises e
-LEFT JOIN users u ON e.user_id = u.id
+LEFT JOIN users u ON e.auth_user_id = u.auth_user_id
 LEFT JOIN user_profiles up ON u.id = up.user_id
 LEFT JOIN enterprise_documents ed ON e.id = ed.enterprise_id
 LEFT JOIN enterprise_contacts ec ON e.id = ec.enterprise_id
@@ -476,7 +476,7 @@ ALTER TABLE enterprises ENABLE ROW LEVEL SECURITY;
 -- 企业用户只能查看自己的企业
 CREATE POLICY "Enterprise users can view own enterprise" ON enterprises
   FOR SELECT USING (
-    user_id = auth.uid() OR
+    auth_user_id = auth.uid() OR
     EXISTS (
       SELECT 1 FROM users
       WHERE id = auth.uid() AND role IN ('admin', 'super_admin')
@@ -485,11 +485,11 @@ CREATE POLICY "Enterprise users can view own enterprise" ON enterprises
 
 -- 企业用户只能更新自己的企业
 CREATE POLICY "Enterprise users can update own enterprise" ON enterprises
-  FOR UPDATE USING (user_id = auth.uid());
+  FOR UPDATE USING (auth_user_id = auth.uid());
 
 -- 企业用户只能插入自己的企业
 CREATE POLICY "Enterprise users can insert own enterprise" ON enterprises
-  FOR INSERT WITH CHECK (user_id = auth.uid());
+  FOR INSERT WITH CHECK (auth_user_id = auth.uid());
 
 -- Admin 用户可以更新企业状态
 CREATE POLICY "Admins can update enterprise status" ON enterprises
@@ -512,7 +512,7 @@ CREATE POLICY "Enterprise users can view own review records" ON review_records
   FOR SELECT USING (
     EXISTS (
       SELECT 1 FROM enterprises
-      WHERE id = enterprise_id AND user_id = auth.uid()
+      WHERE id = enterprise_id AND auth_user_id = auth.uid()
     ) OR
     EXISTS (
       SELECT 1 FROM users
