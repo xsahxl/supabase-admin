@@ -7,20 +7,19 @@ RUN npm install -g pnpm --registry=https://registry.npmmirror.com
 # 设置工作目录
 WORKDIR /app
 
-# 复制package.json文件
-COPY package.json pnpm-workspace.yaml ./
-COPY apps/fe-ui/package.json ./apps/fe-ui/
-
-# 安装依赖
-RUN pnpm i --production --registry=https://registry.npmmirror.com
-
 
 # 复制源代码
 COPY . .
 
+# 安装依赖
+RUN pnpm i --registry=https://registry.npmmirror.com
+
 # 构建前端应用
 WORKDIR /app/apps/fe-ui
 RUN pnpm run build
+
+# 安装生产依赖
+RUN pnpm i --production --registry=https://registry.npmmirror.com
 
 # 暴露端口
 EXPOSE 7777
