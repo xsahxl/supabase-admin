@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import StatusBadge from '@/components/ui/status-badge';
@@ -19,9 +20,11 @@ const CompanyCard = ({ company }: CompanyCardProps) => {
         <div className="flex items-start justify-between">
           <div className="flex items-center space-x-3">
             {company.logo_url && (
-              <img
+              <Image
                 src={company.logo_url}
                 alt={`${company.name} logo`}
+                width={48}
+                height={48}
                 className="w-12 h-12 rounded-lg object-cover"
                 onError={(e) => {
                   const target = e.target as HTMLImageElement;

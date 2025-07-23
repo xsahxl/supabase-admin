@@ -19,5 +19,5 @@ export type Enterprise = {
   submitted_at?: string;
   approved_at?: string;
   approved_by?: string;
-  metadata?: any;
+  metadata?: Record<string, any>;
 }; 

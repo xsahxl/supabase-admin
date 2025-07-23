@@ -6,7 +6,6 @@ import type { Enterprise } from '@/lib/types/enterprise';
 import { CompanyForm } from '@/components/company/company-form';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/stores/auth';
-import { usePathname } from 'next/navigation';
 
 const CompanyPage: React.FC = () => {
   const [enterprises, setEnterprises] = useState<Enterprise[]>([]);
@@ -16,7 +15,6 @@ const CompanyPage: React.FC = () => {
   const [editing, setEditing] = useState<Enterprise | null>(null);
   const [formLoading, setFormLoading] = useState(false);
 
-  const pathname = usePathname();
 
   const fetchEnterprises = async () => {
     setLoading(true);

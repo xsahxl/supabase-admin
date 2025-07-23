@@ -27,6 +27,8 @@ export const UserForm: React.FC<UserFormProps> = ({
   loading = false
 }) => {
   const [formData, setFormData] = useState({
+    name: '',
+    status: 'active' as 'active' | 'inactive' | 'suspended',
     email: '',
     role: 'user' as 'user' | 'admin' | 'super_admin',
     phone: '',
@@ -36,6 +38,8 @@ export const UserForm: React.FC<UserFormProps> = ({
   useEffect(() => {
     if (initialData) {
       setFormData({
+        name: initialData.name || '',
+        status: initialData.status,
         email: initialData.email || '',
         role: initialData.role,
         phone: initialData.phone || '',

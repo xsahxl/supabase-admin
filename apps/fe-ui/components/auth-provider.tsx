@@ -11,7 +11,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!initialized) {
       initialize();
     }
-  }, []); // 空依赖项数组，只在组件挂载时执行一次
+  }, [initialize, initialized]); // 添加依赖项
 
   return <>{children}</>;
 } 

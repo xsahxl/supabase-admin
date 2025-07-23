@@ -6,8 +6,6 @@ import type { User } from '@/lib/types/user';
 import { UserForm } from '@/components/user/user-form';
 import { UserCard } from '@/components/user/user-card';
 import { Button } from '@/components/ui/button';
-import { useAuthStore } from '@/stores/auth';
-import { useRouter } from 'next/navigation';
 
 const UsersPage: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
@@ -18,8 +16,6 @@ const UsersPage: React.FC = () => {
   const [editing, setEditing] = useState<User | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-
-  const router = useRouter();
 
   const fetchUsers = async () => {
     setLoading(true);

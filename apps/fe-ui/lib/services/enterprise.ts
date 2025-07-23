@@ -13,10 +13,9 @@ export const getEnterprises = async (): Promise<Enterprise[]> => {
 };
 
 export const createEnterprise = async (enterprise: Omit<Enterprise, 'id' | 'created_at' | 'updated_at'>): Promise<Enterprise> => {
-  console.log('createEnterprise', enterprise);
   // 过滤掉所有值为 "" 或 null 的字段
   const cleanEnterprise: any = Object.fromEntries(
-    Object.entries(enterprise).filter(([_, value]) => value !== '' && value !== null)
+    Object.entries(enterprise).filter(([, value]) => value !== '' && value !== null)
   );
   // registered_capital 转为数字类型
   if (typeof cleanEnterprise.registered_capital === 'string') {

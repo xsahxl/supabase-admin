@@ -14,6 +14,7 @@ export type CompanyFormProps = {
 };
 
 const defaultForm: Omit<Enterprise, 'id' | 'created_at' | 'updated_at'> = {
+  auth_user_id: '',
   name: '',
   type: '',
   industry: '',
