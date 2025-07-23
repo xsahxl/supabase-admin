@@ -9,7 +9,7 @@ import type { User } from '@/lib/types/user';
 
 interface UserFormProps {
   initialData?: User;
-  onSubmit: (data: Omit<User, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
+  onSubmit: (data: Omit<User, 'id' | 'created_at' | 'updated_at' | 'name'>) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
 }
@@ -27,7 +27,6 @@ export const UserForm: React.FC<UserFormProps> = ({
   loading = false
 }) => {
   const [formData, setFormData] = useState({
-    name: '',
     status: 'active' as 'active' | 'inactive' | 'suspended',
     email: '',
     role: 'user' as 'user' | 'admin' | 'super_admin',
@@ -38,7 +37,6 @@ export const UserForm: React.FC<UserFormProps> = ({
   useEffect(() => {
     if (initialData) {
       setFormData({
-        name: initialData.name || '',
         status: initialData.status,
         email: initialData.email || '',
         role: initialData.role,
