@@ -54,7 +54,7 @@ export const UserCard: React.FC<UserCardProps> = ({
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-3">
             <div className="font-semibold text-lg text-gray-900">
-              {user.name || user.email}
+              {user.email}
             </div>
             <Badge className={getStatusColor(user.status)}>
               {getStatusLabel(user.status)}

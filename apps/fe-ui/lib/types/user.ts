@@ -1,6 +1,5 @@
 export type User = {
   id: string;
-  name: string;
   status: 'active' | 'inactive' | 'suspended';
   auth_user_id: string;
   email: string;
