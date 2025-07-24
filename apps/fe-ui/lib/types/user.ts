@@ -12,5 +12,4 @@ export type User = {
   metadata?: Record<string, string | number | boolean | null>;
 };
 
-export type CreateUserData = Omit<User, 'id' | 'created_at' | 'updated_at'>;
 export type UpdateUserData = Partial<Omit<User, 'id' | 'created_at' | 'updated_at'>>; 

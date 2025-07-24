@@ -1,5 +1,5 @@
 import { createClient } from '../supabase/client';
-import type { User, CreateUserData, UpdateUserData } from '../types/user';
+import type { User, UpdateUserData } from '../types/user';
 
 const supabase = createClient();
 
