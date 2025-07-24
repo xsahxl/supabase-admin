@@ -9,7 +9,7 @@ import type { User } from '@/lib/types/user';
 
 interface UserFormProps {
   initialData?: User;
-  onSubmit: (data: Omit<User, 'id' | 'created_at' | 'updated_at' | 'name'>) => Promise<void>;
+  onSubmit: (data: Omit<User, 'id' | 'created_at' | 'updated_at'>) => Promise<void>;
   onCancel: () => void;
   loading?: boolean;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { getUsers, createUser, updateUser, deleteUser, checkIsSuperAdmin, getCurrentUser } from '@/lib/services/user';
+import { getUsers, updateUser, checkIsSuperAdmin, getCurrentUser } from '@/lib/services/user';
 import type { User } from '@/lib/types/user';
 import { UserForm } from '@/components/user/user-form';
 import { UserCard } from '@/components/user/user-card';
@@ -71,14 +71,14 @@ const UsersPage: React.FC = () => {
     setShowForm(true);
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (authUserId: string) => {
     if (!isSuperAdmin) {
       alert('只有超级管理员可以删除用户');
       return;
     }
 
     // 不能删除自己
-    if (id === currentUser?.id) {
+    if (authUserId === currentUser?.auth_user_id) {
       alert('不能删除自己的账户');
       return;
     }
@@ -87,7 +87,13 @@ const UsersPage: React.FC = () => {
 
     setLoading(true);
     try {
-      await deleteUser(id);
+      const res = await fetch('/api/user', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ authUserId }),
+      });
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || '删除失败');
       await fetchUsers();
     } catch (err: any) {
       setError(err.message || '删除失败');
@@ -102,10 +108,14 @@ const UsersPage: React.FC = () => {
       if (editing) {
         await updateUser(editing.id, data);
       } else {
-        // 创建新用户时需要提供auth_user_id
-        // 这里需要先创建auth用户，然后获取auth_user_id
-        // 简化处理，实际项目中可能需要更复杂的逻辑
-        await createUser(data);
+        // 创建新用户，调用 API
+        const res = await fetch('/api/user', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: data.email, password: '123456' }),
+        });
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || '创建失败');
       }
       setShowForm(false);
       await fetchUsers();
@@ -163,7 +173,7 @@ const UsersPage: React.FC = () => {
             currentUserId={currentUser?.id}
             isSuperAdmin={isSuperAdmin}
             onEdit={handleEdit}
-            onDelete={handleDelete}
+            onDelete={() => handleDelete(user.auth_user_id)}
           />
         ))}
       </div>

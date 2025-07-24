@@ -28,16 +28,6 @@ export const getCurrentUser = async (): Promise<User | null> => {
   return data as User;
 };
 
-// 创建用户
-export const createUser = async (userData: CreateUserData): Promise<User> => {
-  const { data, error } = await supabase
-    .from('users')
-    .insert([userData])
-    .select()
-    .single();
-  if (error) throw error;
-  return data as User;
-};
 
 // 更新用户
 export const updateUser = async (id: string, userData: UpdateUserData): Promise<User> => {
@@ -52,14 +42,6 @@ export const updateUser = async (id: string, userData: UpdateUserData): Promise<
   return data as User;
 };
 
-// 删除用户
-export const deleteUser = async (id: string): Promise<void> => {
-  const { error } = await supabase
-    .from('users')
-    .delete()
-    .eq('id', id);
-  if (error) throw error;
-};
 
 // 检查当前用户是否为超级管理员
 export const checkIsSuperAdmin = async (): Promise<boolean> => {
